@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+# Build output
+dist
+dist-ssr
+*.local
+
+# Rust / Tauri
+src-tauri/target
+src-tauri/gen/schemas
+
+# Local SQLite databases (created at runtime / regenerated from migrations)
+*.db
+*.db-wal
+*.db-shm
+
+# Environment (machine-specific; commit .env.example instead)
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.sw?
