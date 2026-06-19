@@ -5,7 +5,9 @@
 pub mod category_service;
 pub mod ticket_service;
 pub mod unit_service;
+pub mod user_type_service;
 
 pub use category_service::CategoryService;
 pub use ticket_service::{TicketService, ValidationResult};
 pub use unit_service::UnitService;
+pub use user_type_service::UserTypeService;

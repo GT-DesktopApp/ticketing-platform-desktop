@@ -5,3 +5,4 @@
 pub mod category_commands;
 pub mod ticket_commands;
 pub mod unit_commands;
+pub mod user_type_commands;

@@ -4,7 +4,9 @@
 pub mod category_repository;
 pub mod ticket_repository;
 pub mod unit_repository;
+pub mod user_type_repository;
 
 pub use category_repository::CategoryRepository;
 pub use ticket_repository::TicketRepository;
 pub use unit_repository::UnitRepository;
+pub use user_type_repository::UserTypeRepository;

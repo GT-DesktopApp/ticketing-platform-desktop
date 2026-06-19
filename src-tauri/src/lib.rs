@@ -13,8 +13,8 @@ mod repository;
 mod service;
 
 use config::AppConfig;
-use repository::{CategoryRepository, TicketRepository, UnitRepository};
-use service::{CategoryService, TicketService, UnitService};
+use repository::{CategoryRepository, TicketRepository, UnitRepository, UserTypeRepository};
+use service::{CategoryService, TicketService, UnitService, UserTypeService};
 use tauri::Manager;
 
 /// State shared with every command. Holds the application's services (not raw
@@ -24,6 +24,7 @@ pub struct AppState {
     pub tickets: TicketService,
     pub categories: CategoryService,
     pub units: UnitService,
+    pub user_types: UserTypeService,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -44,13 +45,15 @@ pub fn run() {
                 // Compose layers: repository over the pool, service over the repo.
                 let tickets = TicketService::new(TicketRepository::new(pool.clone()));
                 let categories = CategoryService::new(CategoryRepository::new(pool.clone()));
-                let units = UnitService::new(UnitRepository::new(pool));
+                let units = UnitService::new(UnitRepository::new(pool.clone()));
+                let user_types = UserTypeService::new(UserTypeRepository::new(pool));
 
                 app.manage(AppState {
                     config: config.clone(),
                     tickets,
                     categories,
                     units,
+                    user_types,
                 });
 
                 tracing::info!("application initialised");
@@ -76,6 +79,12 @@ pub fn run() {
             commands::unit_commands::unit_update,
             commands::unit_commands::unit_set_active,
             commands::unit_commands::unit_delete,
+            // User types
+            commands::user_type_commands::user_type_list,
+            commands::user_type_commands::user_type_create,
+            commands::user_type_commands::user_type_update,
+            commands::user_type_commands::user_type_set_active,
+            commands::user_type_commands::user_type_delete,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
