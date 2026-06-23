@@ -30,6 +30,12 @@ uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1"
 
+# Sync layer: HTTP client to push the outbox to the cloud server.
+# rustls avoids a system OpenSSL dependency so the installer stays self-contained.
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+# Jitter for exponential backoff (avoids thundering-herd retries across devices).
+rand = "0.8"
+
 # Structured logging.
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

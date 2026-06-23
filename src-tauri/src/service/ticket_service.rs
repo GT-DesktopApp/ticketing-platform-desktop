@@ -4,6 +4,7 @@
 use crate::domain::{Ticket, ValidationOutcome};
 use crate::error::AppResult;
 use crate::repository::TicketRepository;
+use crate::sync::identity::Identity;
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -19,11 +20,13 @@ pub struct ValidationResult {
 #[derive(Clone)]
 pub struct TicketService {
     repo: TicketRepository,
+    /// Tenant + device identity stamped onto every record and queue row.
+    identity: Identity,
 }
 
 impl TicketService {
-    pub fn new(repo: TicketRepository) -> Self {
-        Self { repo }
+    pub fn new(repo: TicketRepository, identity: Identity) -> Self {
+        Self { repo, identity }
     }
 
     pub async fn list(&self) -> AppResult<Vec<Ticket>> {
@@ -45,7 +48,9 @@ impl TicketService {
             ));
         }
         let code = format!("TKT-{}", Uuid::new_v4().simple());
-        self.repo.insert(&code, invoice_id, &valid_date).await
+        self.repo
+            .insert(&self.identity, &code, invoice_id, &valid_date)
+            .await
     }
 
     pub async fn update(
@@ -55,12 +60,12 @@ impl TicketService {
         valid_date: Option<String>,
     ) -> AppResult<Ticket> {
         self.repo
-            .update(id, status.as_deref(), valid_date.as_deref())
+            .update(&self.identity, id, status.as_deref(), valid_date.as_deref())
             .await
     }
 
     pub async fn delete(&self, id: i64) -> AppResult<()> {
-        self.repo.delete(id).await
+        self.repo.delete(&self.identity, id).await
     }
 
     /// Validate a ticket for entry. Reads the ticket, applies the pure domain
@@ -88,7 +93,7 @@ impl TicketService {
                 valid_date: Some(ticket.valid_date),
             }),
             ValidationOutcome::Granted => {
-                let used = self.repo.mark_used(ticket.id).await?;
+                let used = self.repo.mark_used(&self.identity, ticket.id).await?;
                 Ok(ValidationResult {
                     valid: true,
                     reason: "Entry granted".into(),

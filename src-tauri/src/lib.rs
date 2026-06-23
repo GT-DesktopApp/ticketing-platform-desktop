@@ -11,6 +11,7 @@ mod domain;
 mod error;
 mod repository;
 mod service;
+mod sync;
 
 use config::AppConfig;
 use repository::{CategoryRepository, TicketRepository, UnitRepository, UserTypeRepository};
@@ -42,11 +43,28 @@ pub fn run() {
                 let pool = tauri::async_runtime::block_on(db::init(&handle, &config))
                     .expect("failed to initialise local database");
 
+                // Resolve device + tenant identity (device_id persisted once).
+                let identity = tauri::async_runtime::block_on(sync::identity::resolve(
+                    &pool, &config,
+                ))
+                .expect("failed to resolve device identity");
+
                 // Compose layers: repository over the pool, service over the repo.
-                let tickets = TicketService::new(TicketRepository::new(pool.clone()));
+                let tickets =
+                    TicketService::new(TicketRepository::new(pool.clone()), identity.clone());
                 let categories = CategoryService::new(CategoryRepository::new(pool.clone()));
                 let units = UnitService::new(UnitRepository::new(pool.clone()));
-                let user_types = UserTypeService::new(UserTypeRepository::new(pool));
+                let user_types = UserTypeService::new(UserTypeRepository::new(pool.clone()));
+
+                // Start the background sync drain (off the UI thread) and the
+                // nightly safety-net scheduler (reconcile + snapshot @ 12:00 IST).
+                let snapshot_dir = handle
+                    .path()
+                    .app_data_dir()
+                    .map(|d| d.join("snapshots"))
+                    .unwrap_or_else(|_| std::path::PathBuf::from("snapshots"));
+                sync::worker::spawn(pool.clone(), identity.clone(), config.clone());
+                sync::nightly::spawn(pool, identity, config.clone(), snapshot_dir);
 
                 app.manage(AppState {
                     config: config.clone(),

@@ -26,6 +26,9 @@ impl TicketStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Ticket {
     pub id: i64,
+    /// Stable cross-device identity the server upserts by. Always set on new
+    /// rows; Option only because pre-sync rows may predate the column.
+    pub uuid: Option<String>,
     pub ticket_code: String,
     pub invoice_id: Option<i64>,
     pub valid_date: String,
@@ -66,6 +69,7 @@ mod tests {
     fn ticket(status: &str, valid_date: &str, used_at: Option<&str>) -> Ticket {
         Ticket {
             id: 1,
+            uuid: Some("11111111-1111-1111-1111-111111111111".into()),
             ticket_code: "TKT-1".into(),
             invoice_id: None,
             valid_date: valid_date.into(),
